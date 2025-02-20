@@ -32,14 +32,14 @@ compoundRouter.patch("/:id", async (c) => {
     updateBody.name,
     updateBody.groesse,
     updateBody.instandhaltungskosten,
-    compoundID,
+    // compoundID,
   ];
   const updateResult = getPool().query(updateText);
   log("Update von Gehegewerten.");
 
   const joinQueryResult = await getPool().query(
     'SELECT * FROM "Personal_gehebe" WHERE gehege_id = $1',
-    [compoundId]
+    // [compoundId]
   );
   const compoundJoin = joinQueryResult.rows;
 });
