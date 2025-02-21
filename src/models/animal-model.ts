@@ -5,7 +5,14 @@ import { HTTPException } from "../utils/HTTPException.js";
 import type { Context } from "hono";
 
 export const getAllAnimals = async (): Promise<Tier[]> => {
-  const queryResult = await getPool().query('SELECT * FROM "Tier"');
+  const queryResult = await getPool().query(`
+    SELECT 
+      "Tier".*,
+      COALESCE(json_agg("Bild".url) FILTER (WHERE "Bild".url IS NOT NULL), '[]') AS bilder
+    FROM "Tier"
+    LEFT JOIN "Bild" ON "Tier".id = "Bild".tier_id
+    GROUP BY "Tier".id
+  `);
   return queryResult.rows;
 };
 
@@ -76,6 +83,30 @@ export const assignAnimalToCompound = async (c: Context) => {
   } catch (error) {
     return handleError(error, c);
   }
+};
+
+export const updateAnimal = async (
+  id: number,
+  updatedFields: Partial<Tier>
+): Promise<Tier | null> => {
+  const fields = Object.keys(updatedFields);
+  if (fields.length === 0) {
+    throw new HTTPException(400, {
+      message: "Keine gültigen Felder zum Aktualisieren angegeben",
+    });
+  }
+
+  const setClause = fields
+    .map((field, index) => `"${field}" = $${index + 1}`)
+    .join(", ");
+  const values = [...Object.values(updatedFields), id];
+
+  const queryText = `UPDATE "Tier" SET ${setClause} WHERE id = $${
+    fields.length + 1
+  } RETURNING *`;
+
+  const result = await getPool().query(queryText, values);
+  return result.rows.length > 0 ? result.rows[0] : null;
 };
 
 const handleError = (error: unknown, c: Context) => {
