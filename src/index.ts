@@ -21,7 +21,7 @@ app.route("/animals", animalsRouter);
 serve(
   {
     fetch: app.fetch,
-    port: 3000,
+    port: 8080,
   },
   (info) => {
     console.log(`🐾 Server läuft auf http://${info.address}:${info.port}`);
